@@ -1,0 +1,2654 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ParkMaster - Gestión de Estacionamiento</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        /* Estilos existentes (sin cambios) */
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --dark-color: #2c3e50;
+            --light-color: #ecf0f1;
+            --admin-color: #9b59b6;
+            --client-color: #1abc9c;
+            --accounting-color: #16a085;
+            --info-color: #2980b9;
+            --sales-color: #e67e22;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Header y Navegación */
+        header {
+            background: linear-gradient(135deg, var(--dark-color) 0%, #34495e 100%);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo i {
+            color: var(--primary-color);
+        }
+        
+        .logo span {
+            color: var(--primary-color);
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .user-role {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .user-role.admin {
+            background-color: var(--admin-color);
+        }
+        
+        .user-role.client {
+            background-color: var(--client-color);
+        }
+        
+        nav ul {
+            display: flex;
+            list-style: none;
+        }
+        
+        nav ul li {
+            margin-left: 20px;
+        }
+        
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+        
+        nav ul li a:hover, nav ul li a.active {
+            background-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+        
+        /* Login */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 80vh;
+        }
+        
+        .login-form {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            border-top: 5px solid var(--primary-color);
+        }
+        
+        .login-form h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: var(--dark-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        /* Módulos */
+        .module {
+            display: none;
+            background-color: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .module.active {
+            display: block;
+        }
+        
+        h2 {
+            color: var(--dark-color);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--light-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* Tarjetas de Clientes/Espacios */
+        .client-card, .space-card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            border-left: 5px solid var(--primary-color);
+            transition: all 0.3s;
+        }
+        
+        .client-card:hover, .space-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .client-card.active {
+            border-left-color: var(--secondary-color);
+        }
+        
+        .client-card.expired {
+            border-left-color: var(--danger-color);
+        }
+        
+        .client-card.warning {
+            border-left-color: var(--warning-color);
+        }
+        
+        .space-card.available {
+            border-left-color: var(--secondary-color);
+        }
+        
+        .space-card.occupied {
+            border-left-color: var(--primary-color);
+        }
+        
+        .space-card.maintenance {
+            border-left-color: var(--warning-color);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .client-name, .space-name {
+            font-weight: bold;
+            font-size: 1.3rem;
+        }
+        
+        .status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .status.active {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .status.expired {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        
+        .status.warning {
+            background-color: var(--warning-color);
+            color: white;
+        }
+        
+        .status.available {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .status.occupied {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .status.maintenance {
+            background-color: var(--warning-color);
+            color: white;
+        }
+        
+        .card-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .detail-item {
+            margin-bottom: 8px;
+        }
+        
+        .detail-label {
+            font-weight: bold;
+            color: #777;
+            font-size: 0.9rem;
+        }
+        
+        /* Botones y Acciones */
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-success {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        
+        .btn-warning {
+            background-color: var(--warning-color);
+            color: white;
+        }
+        
+        .btn-admin {
+            background-color: var(--admin-color);
+            color: white;
+        }
+        
+        .btn-client {
+            background-color: var(--client-color);
+            color: white;
+        }
+        
+        .btn-accounting {
+            background-color: var(--accounting-color);
+            color: white;
+        }
+        
+        .btn-info {
+            background-color: var(--info-color);
+            color: white;
+        }
+        
+        .btn-sales {
+            background-color: var(--sales-color);
+            color: white;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+        
+        /* Formularios */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: var(--dark-color);
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        /* Búsqueda */
+        .search-bar {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .search-bar input {
+            padding: 12px 45px 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            width: 100%;
+        }
+        
+        .search-bar i {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #777;
+        }
+        
+        /* Estadísticas */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            transition: all 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .stat-value {
+            font-size: 2.2rem;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        
+        .stat-card.active {
+            border-top: 4px solid var(--secondary-color);
+        }
+        
+        .stat-card.expired {
+            border-top: 4px solid var(--danger-color);
+        }
+        
+        .stat-card.warning {
+            border-top: 4px solid var(--warning-color);
+        }
+        
+        .stat-card.total {
+            border-top: 4px solid var(--primary-color);
+        }
+        
+        .stat-card.income {
+            border-top: 4px solid var(--accounting-color);
+        }
+        
+        .stat-card.info {
+            border-top: 4px solid var(--info-color);
+        }
+        
+        .stat-card.sales {
+            border-top: 4px solid var(--sales-color);
+        }
+        
+        /* Grid de Espacios */
+        .spaces-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .space-item {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .space-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .space-item.available {
+            background-color: #e8f5e8;
+            border: 2px solid var(--secondary-color);
+        }
+        
+        .space-item.occupied {
+            background-color: #e3f2fd;
+            border: 2px solid var(--primary-color);
+        }
+        
+        .space-item.maintenance {
+            background-color: #fef9e7;
+            border: 2px solid var(--warning-color);
+        }
+        
+        .space-number {
+            font-size: 1.6rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .space-info {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .space-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+        }
+        
+        .space-actions .btn {
+            padding: 5px 10px;
+            font-size: 0.8rem;
+        }
+        
+        /* Estados vacíos */
+        .empty-state {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: #ddd;
+        }
+        
+        /* Tablas */
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background: white;
+        }
+        
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        th {
+            background-color: var(--light-color);
+            font-weight: bold;
+            color: var(--dark-color);
+            position: sticky;
+            top: 0;
+        }
+        
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+        
+        .income-positive {
+            color: var(--secondary-color);
+            font-weight: bold;
+        }
+        
+        .income-negative {
+            color: var(--danger-color);
+            font-weight: bold;
+        }
+        
+        /* Filtros de contabilidad */
+        .filters {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        }
+        
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+        
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        /* Gráficos */
+        .chart-container {
+            background-color: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        }
+        
+        .chart-placeholder {
+            height: 300px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #666;
+            font-size: 1.2rem;
+        }
+        
+        /* Notificaciones */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            z-index: 1000;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transform: translateX(120%);
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.success {
+            background-color: var(--secondary-color);
+        }
+        
+        .notification.error {
+            background-color: var(--danger-color);
+        }
+        
+        .notification.warning {
+            background-color: var(--warning-color);
+        }
+        
+        /* Carga */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 25px;
+            color: #777;
+            border-top: 1px solid #ddd;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+            
+            nav ul {
+                margin-top: 15px;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            
+            nav ul li {
+                margin: 0;
+            }
+            
+            .card-details {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .actions {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .spaces-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            }
+            
+            .filter-row {
+                flex-direction: column;
+            }
+            
+            .filter-group {
+                width: 100%;
+            }
+            
+            .stats {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .module {
+                padding: 15px;
+            }
+            
+            .stats {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .spaces-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            }
+            
+            nav ul li a span {
+                display: none;
+            }
+            
+            nav ul li a {
+                padding: 8px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Notificaciones -->
+    <div id="notification" class="notification"></div>
+    
+    <!-- Pantalla de Login -->
+    <div id="login-screen">
+        <header>
+            <div class="container">
+                <div class="header-content">
+                    <div class="logo">
+                        <i class="fas fa-parking"></i>
+                        Park<span>Master</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <div class="container">
+            <div class="login-container">
+                <div class="login-form">
+                    <h2><i class="fas fa-parking"></i> Iniciar Sesión</h2>
+                    <div class="form-group">
+                        <label for="login-email"><i class="fas fa-envelope"></i> Email</label>
+                        <input type="email" id="login-email" placeholder="tu@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password"><i class="fas fa-lock"></i> Contraseña</label>
+                        <input type="password" id="login-password" placeholder="••••••••">
+                    </div>
+                    <div class="form-group">
+                        <button id="login-btn" class="btn btn-primary" style="width: 100%;">
+                            <i class="fas fa-sign-in-alt"></i> Ingresar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Aplicación Principal (oculta inicialmente) -->
+    <div id="app" style="display: none;">
+        <header>
+            <div class="container">
+                <div class="header-content">
+                    <div class="logo">
+                        <i class="fas fa-parking"></i>
+                        Park<span>Master</span>
+                    </div>
+                    <nav>
+                        <ul>
+                            <li><a href="#" class="nav-link active" data-module="dashboard">
+                                <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
+                            </a></li>
+                            <li id="admin-nav" style="display: none;">
+                                <a href="#" class="nav-link" data-module="clients">
+                                    <i class="fas fa-users"></i> <span>Clientes</span>
+                                </a>
+                            </li>
+                            <li id="admin-nav2" style="display: none;">
+                                <a href="#" class="nav-link" data-module="spaces">
+                                    <i class="fas fa-car"></i> <span>Espacios</span>
+                                </a>
+                            </li>
+                            <li id="admin-nav3" style="display: none;">
+                                <a href="#" class="nav-link" data-module="sales">
+                                    <i class="fas fa-cash-register"></i> <span>Ventas Diarias</span>
+                                </a>
+                            </li>
+                            <li id="admin-nav4" style="display: none;">
+                                <a href="#" class="nav-link" data-module="accounting">
+                                    <i class="fas fa-chart-line"></i> <span>Contabilidad</span>
+                                </a>
+                            </li>
+                            <li><a href="#" class="nav-link" data-module="profile">
+                                <i class="fas fa-user"></i> <span>Mi Perfil</span>
+                            </a></li>
+                        </ul>
+                    </nav>
+                    <div class="user-info">
+                        <span id="user-name">Usuario</span>
+                        <span id="user-role" class="user-role">Rol</span>
+                        <button id="logout-btn" class="btn btn-danger">
+                            <i class="fas fa-sign-out-alt"></i> <span>Cerrar Sesión</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <div class="container">
+            <!-- Dashboard -->
+            <div id="dashboard" class="module active">
+                <h2><i class="fas fa-tachometer-alt"></i> Dashboard</h2>
+                <div id="admin-dashboard" style="display: none;">
+                    <div class="stats">
+                        <div class="stat-card total">
+                            <div class="stat-label">Total Clientes</div>
+                            <div class="stat-value" id="total-clients">0</div>
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-card active">
+                            <div class="stat-label">Suscripciones Activas</div>
+                            <div class="stat-value" id="active-subscriptions">0</div>
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-card warning">
+                            <div class="stat-label">Por Vencer</div>
+                            <div class="stat-value" id="warning-subscriptions">0</div>
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="stat-card expired">
+                            <div class="stat-label">Vencidas</div>
+                            <div class="stat-value" id="expired-subscriptions">0</div>
+                            <i class="fas fa-times-circle"></i>
+                        </div>
+                        <div class="stat-card income">
+                            <div class="stat-label">Ingreso Mensual</div>
+                            <div class="stat-value" id="monthly-income">$0</div>
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div class="stat-card sales">
+                            <div class="stat-label">Ventas Hoy</div>
+                            <div class="stat-value" id="today-sales">$0</div>
+                            <i class="fas fa-cash-register"></i>
+                        </div>
+                    </div>
+                    
+                    <h3><i class="fas fa-users"></i> Clientes Recientes</h3>
+                    <div class="search-bar">
+                        <input type="text" id="search-dashboard" placeholder="Buscar cliente...">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    
+                    <div id="clients-list-dashboard">
+                        <!-- Los clientes se cargarán aquí dinámicamente -->
+                    </div>
+                </div>
+                
+                <div id="client-dashboard" style="display: none;">
+                    <div class="client-card active">
+                        <div class="card-header">
+                            <div class="client-name" id="client-dash-name">Nombre del Cliente</div>
+                            <div class="status active" id="client-dash-status">Activa</div>
+                        </div>
+                        <div class="card-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Vehículo:</span>
+                                <span id="client-dash-vehicle">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Placa:</span>
+                                <span id="client-dash-plate">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Espacio Asignado:</span>
+                                <span id="client-dash-space">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Próximo Vencimiento:</span>
+                                <span id="client-dash-expiry">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Días Restantes:</span>
+                                <span id="client-dash-days">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Monto Mensual:</span>
+                                <span id="client-dash-amount">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h3 style="margin-top: 30px;"><i class="fas fa-history"></i> Historial de Pagos</h3>
+                    <div id="payment-history">
+                        <!-- El historial se cargará aquí dinámicamente -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Módulo Gestión de Clientes (Solo Admin) -->
+            <div id="clients" class="module">
+                <h2><i class="fas fa-users"></i> Gestión de Clientes</h2>
+                
+                <div class="actions" style="margin-bottom: 20px;">
+                    <button id="add-client-btn" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Agregar Cliente
+                    </button>
+                    <button id="export-clients-btn" class="btn btn-info">
+                        <i class="fas fa-file-excel"></i> Exportar a Excel
+                    </button>
+                    <button id="reset-data-btn" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Resetear Datos
+                    </button>
+                </div>
+                
+                <div class="search-bar">
+                    <input type="text" id="search-clients" placeholder="Buscar por nombre, placa o email...">
+                    <i class="fas fa-search"></i>
+                </div>
+                
+                <div id="clients-list">
+                    <!-- Los clientes se cargarán aquí dinámicamente -->
+                </div>
+            </div>
+            
+            <!-- Módulo Gestión de Espacios (Solo Admin) -->
+            <div id="spaces" class="module">
+                <h2><i class="fas fa-car"></i> Gestión de Espacios</h2>
+                
+                <div class="stats">
+                    <div class="stat-card total">
+                        <div class="stat-label">Total Espacios</div>
+                        <div class="stat-value" id="total-spaces">140</div>
+                        <i class="fas fa-parking"></i>
+                    </div>
+                    <div class="stat-card available">
+                        <div class="stat-label">Disponibles</div>
+                        <div class="stat-value" id="available-spaces">0</div>
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-card occupied">
+                        <div class="stat-label">Ocupados</div>
+                        <div class="stat-value" id="occupied-spaces">0</div>
+                        <i class="fas fa-car"></i>
+                    </div>
+                    <div class="stat-card warning">
+                        <div class="stat-label">En Mantenimiento</div>
+                        <div class="stat-value" id="maintenance-spaces">0</div>
+                        <i class="fas fa-tools"></i>
+                    </div>
+                </div>
+                
+                <div class="actions" style="margin-bottom: 20px;">
+                    <button id="add-space-btn" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Agregar Espacio
+                    </button>
+                    <button id="bulk-maintenance-btn" class="btn btn-warning">
+                        <i class="fas fa-tools"></i> Gestión Masiva
+                    </button>
+                </div>
+                
+                <h3><i class="fas fa-map"></i> Mapa de Espacios</h3>
+                <div class="spaces-grid" id="spaces-grid">
+                    <!-- Los espacios se cargarán aquí dinámicamente -->
+                </div>
+            </div>
+            
+            <!-- Módulo Ventas Diarias (Solo Admin) -->
+            <div id="sales" class="module">
+                <h2><i class="fas fa-cash-register"></i> Ventas Diarias</h2>
+                
+                <div class="stats">
+                    <div class="stat-card sales">
+                        <div class="stat-label">Ventas de Hoy</div>
+                        <div class="stat-value" id="today-sales-amount">$0</div>
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div class="stat-card income">
+                        <div class="stat-label">Ventas del Mes</div>
+                        <div class="stat-value" id="month-sales-amount">$0</div>
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-card total">
+                        <div class="stat-label">Total Ventas</div>
+                        <div class="stat-value" id="total-sales-amount">$0</div>
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <div class="stat-card info">
+                        <div class="stat-label">Promedio Diario</div>
+                        <div class="stat-value" id="average-daily-sales">$0</div>
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                </div>
+                
+                <div class="actions" style="margin-bottom: 20px;">
+                    <button id="add-sale-btn" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Registrar Venta
+                    </button>
+                    <button id="export-sales-btn" class="btn btn-info">
+                        <i class="fas fa-file-excel"></i> Exportar a Excel
+                    </button>
+                </div>
+                
+                <h3><i class="fas fa-history"></i> Registro de Ventas</h3>
+                <div class="table-container">
+                    <table id="sales-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Concepto</th>
+                                <th>Vehículo/Placa</th>
+                                <th>Tipo</th>
+                                <th>Monto</th>
+                                <th>Método de Pago</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sales-table-body">
+                            <!-- Las ventas se cargarán aquí dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Módulo Contabilidad (Solo Admin) -->
+            <div id="accounting" class="module">
+                <h2><i class="fas fa-chart-line"></i> Contabilidad</h2>
+                
+                <div class="stats">
+                    <div class="stat-card income">
+                        <div class="stat-label">Ingresos del Mes</div>
+                        <div class="stat-value" id="current-month-income">$0</div>
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div class="stat-card total">
+                        <div class="stat-label">Ingresos Totales</div>
+                        <div class="stat-value" id="total-income">$0</div>
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <div class="stat-card active">
+                        <div class="stat-label">Clientes Activos</div>
+                        <div class="stat-value" id="accounting-active-clients">0</div>
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-card info">
+                        <div class="stat-label">Espacios Ocupados</div>
+                        <div class="stat-value" id="accounting-occupied-spaces">0</div>
+                        <i class="fas fa-car"></i>
+                    </div>
+                </div>
+                
+                <div class="filters">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="date-from">Desde</label>
+                            <input type="date" id="date-from">
+                        </div>
+                        <div class="filter-group">
+                            <label for="date-to">Hasta</label>
+                            <input type="date" id="date-to">
+                        </div>
+                        <div class="filter-group">
+                            <label for="income-type">Tipo de Ingreso</label>
+                            <select id="income-type">
+                                <option value="all">Todos</option>
+                                <option value="subscription">Suscripciones</option>
+                                <option value="daily">Ventas Diarias</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <button id="filter-income-btn" class="btn btn-primary">
+                                <i class="fas fa-filter"></i> Filtrar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <h3><i class="fas fa-chart-bar"></i> Gráfico de Ingresos</h3>
+                    <div class="chart-placeholder">
+                        <i class="fas fa-chart-bar"></i> Gráfico de ingresos por mes
+                    </div>
+                </div>
+                
+                <h3><i class="fas fa-list"></i> Detalle de Ingresos</h3>
+                <div class="table-container">
+                    <table id="income-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Concepto</th>
+                                <th>Cliente</th>
+                                <th>Tipo</th>
+                                <th>Monto</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="income-table-body">
+                            <!-- Los ingresos se cargarán aquí dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Módulo Perfil de Usuario -->
+            <div id="profile" class="module">
+                <h2><i class="fas fa-user"></i> Mi Perfil</h2>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="profile-name"><i class="fas fa-user"></i> Nombre Completo</label>
+                        <input type="text" id="profile-name" placeholder="Tu nombre completo">
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-email"><i class="fas fa-envelope"></i> Email</label>
+                        <input type="email" id="profile-email" placeholder="tu@email.com">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="profile-phone"><i class="fas fa-phone"></i> Teléfono</label>
+                        <input type="tel" id="profile-phone" placeholder="+1234567890">
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-address"><i class="fas fa-home"></i> Dirección</label>
+                        <input type="text" id="profile-address" placeholder="Tu dirección">
+                    </div>
+                </div>
+                
+                <h3 style="margin-top: 30px;"><i class="fas fa-lock"></i> Cambiar Contraseña</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="current-password">Contraseña Actual</label>
+                        <input type="password" id="current-password" placeholder="••••••••">
+                    </div>
+                    <div class="form-group">
+                        <label for="new-password">Nueva Contraseña</label>
+                        <input type="password" id="new-password" placeholder="••••••••">
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm-password">Confirmar Nueva Contraseña</label>
+                        <input type="password" id="confirm-password" placeholder="••••••••">
+                    </div>
+                </div>
+                
+                <div class="actions">
+                    <button id="update-profile-btn" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Actualizar Perfil
+                    </button>
+                    <button id="change-password-btn" class="btn btn-warning">
+                        <i class="fas fa-key"></i> Cambiar Contraseña
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>ParkMaster &copy; 2023 - Sistema de Gestión de Estacionamiento</p>
+        </footer>
+    </div>
+    
+    <!-- Modal para Agregar/Editar Cliente -->
+    <div id="client-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div style="background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;">
+            <h2 style="margin-bottom: 20px;"><i class="fas fa-user-plus"></i> <span id="client-modal-title">Agregar Cliente</span></h2>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="client-name">Nombre Completo</label>
+                    <input type="text" id="client-name" placeholder="Nombre del cliente">
+                </div>
+                <div class="form-group">
+                    <label for="client-email">Email</label>
+                    <input type="email" id="client-email" placeholder="cliente@email.com">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="client-phone">Teléfono</label>
+                    <input type="tel" id="client-phone" placeholder="+1234567890">
+                </div>
+                <div class="form-group">
+                    <label for="client-vehicle">Vehículo</label>
+                    <input type="text" id="client-vehicle" placeholder="Marca, modelo, color">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="client-plate">Placa</label>
+                    <input type="text" id="client-plate" placeholder="ABC123">
+                </div>
+                <div class="form-group">
+                    <label for="client-space">Espacio Asignado</label>
+                    <select id="client-space">
+                        <option value="">Seleccionar espacio</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="client-start-date">Fecha de Inicio</label>
+                    <input type="date" id="client-start-date">
+                </div>
+                <div class="form-group">
+                    <label for="client-end-date">Fecha de Vencimiento</label>
+                    <input type="date" id="client-end-date">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="client-amount">Monto Mensual ($)</label>
+                    <input type="number" id="client-amount" placeholder="0.00" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label for="client-status">Estado</label>
+                    <select id="client-status">
+                        <option value="active">Activo</option>
+                        <option value="expired">Vencido</option>
+                        <option value="warning">Por Vencer</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="actions" style="margin-top: 20px;">
+                <button id="save-client-btn" class="btn btn-success">
+                    <i class="fas fa-save"></i> Guardar Cliente
+                </button>
+                <button id="cancel-client-btn" class="btn btn-danger">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para Agregar/Editar Espacio -->
+    <div id="space-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div style="background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 500px;">
+            <h2 style="margin-bottom: 20px;"><i class="fas fa-parking"></i> <span id="space-modal-title">Agregar Espacio</span></h2>
+            
+            <div class="form-group">
+                <label for="space-number">Número de Espacio</label>
+                <input type="text" id="space-number" placeholder="Ej: A-101">
+            </div>
+            
+            <div class="form-group">
+                <label for="space-type">Tipo de Espacio</label>
+                <select id="space-type">
+                    <option value="regular">Regular</option>
+                    <option value="premium">Premium</option>
+                    <option value="handicap">Discapacitados</option>
+                    <option value="motorcycle">Motocicleta</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="space-status">Estado</label>
+                <select id="space-status">
+                    <option value="available">Disponible</option>
+                    <option value="occupied">Ocupado</option>
+                    <option value="maintenance">En Mantenimiento</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="space-rate">Tarifa Mensual ($)</label>
+                <input type="number" id="space-rate" placeholder="0.00" step="0.01">
+            </div>
+            
+            <div class="actions" style="margin-top: 20px;">
+                <button id="save-space-btn" class="btn btn-success">
+                    <i class="fas fa-save"></i> Guardar Espacio
+                </button>
+                <button id="cancel-space-btn" class="btn btn-danger">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para Agregar Venta -->
+    <div id="sale-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div style="background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 500px;">
+            <h2 style="margin-bottom: 20px;"><i class="fas fa-cash-register"></i> Registrar Venta</h2>
+            
+            <div class="form-group">
+                <label for="sale-concept">Concepto</label>
+                <input type="text" id="sale-concept" placeholder="Descripción de la venta">
+            </div>
+            
+            <div class="form-group">
+                <label for="sale-vehicle">Vehículo/Placa</label>
+                <input type="text" id="sale-vehicle" placeholder="Vehículo o placa relacionada">
+            </div>
+            
+            <div class="form-group">
+                <label for="sale-type">Tipo de Venta</label>
+                <select id="sale-type">
+                    <option value="daily">Venta Diaria</option>
+                    <option value="subscription">Suscripción</option>
+                    <option value="other">Otro</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="sale-amount">Monto ($)</label>
+                <input type="number" id="sale-amount" placeholder="0.00" step="0.01">
+            </div>
+            
+            <div class="form-group">
+                <label for="sale-payment">Método de Pago</label>
+                <select id="sale-payment">
+                    <option value="cash">Efectivo</option>
+                    <option value="card">Tarjeta</option>
+                    <option value="transfer">Transferencia</option>
+                </select>
+            </div>
+            
+            <div class="actions" style="margin-top: 20px;">
+                <button id="save-sale-btn" class="btn btn-success">
+                    <i class="fas fa-save"></i> Registrar Venta
+                </button>
+                <button id="cancel-sale-btn" class="btn btn-danger">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Datos de ejemplo para inicializar la aplicación
+        let users = JSON.parse(localStorage.getItem('parkmaster_users')) || [
+            { id: 1, name: "Administrador", email: "admin@parkmaster.com", password: "admin123", role: "admin" },
+            { id: 2, name: "Juan Pérez", email: "cliente@ejemplo.com", password: "cliente123", role: "client" }
+        ];
+        
+        let clients = JSON.parse(localStorage.getItem('parkmaster_clients')) || [
+            {
+                id: 1,
+                name: "Juan Pérez",
+                email: "cliente@ejemplo.com",
+                phone: "+1234567890",
+                vehicle: "Toyota Corolla, Rojo",
+                plate: "ABC123",
+                space: "A-101",
+                startDate: "2023-01-01",
+                endDate: "2023-12-31",
+                amount: 150.00,
+                status: "active",
+                payments: [
+                    { date: "2023-01-01", amount: 150.00, method: "cash" },
+                    { date: "2023-02-01", amount: 150.00, method: "card" }
+                ]
+            },
+            {
+                id: 2,
+                name: "María García",
+                email: "maria@ejemplo.com",
+                phone: "+0987654321",
+                vehicle: "Honda Civic, Azul",
+                plate: "XYZ789",
+                space: "A-102",
+                startDate: "2023-03-01",
+                endDate: "2023-12-31",
+                amount: 150.00,
+                status: "active",
+                payments: [
+                    { date: "2023-03-01", amount: 150.00, method: "cash" }
+                ]
+            }
+        ];
+        
+        let parkingSpaces = JSON.parse(localStorage.getItem('parkmaster_spaces')) || [
+            { id: 1, number: "A-101", type: "regular", status: "occupied", rate: 150.00 },
+            { id: 2, number: "A-102", type: "regular", status: "occupied", rate: 150.00 },
+            { id: 3, number: "A-103", type: "regular", status: "available", rate: 150.00 },
+            { id: 4, number: "A-104", type: "premium", status: "available", rate: 200.00 },
+            { id: 5, number: "B-101", type: "regular", status: "maintenance", rate: 150.00 },
+            { id: 6, number: "B-102", type: "regular", status: "available", rate: 150.00 },
+            { id: 7, number: "B-103", type: "handicap", status: "available", rate: 120.00 },
+            { id: 8, number: "B-104", type: "motorcycle", status: "available", rate: 80.00 }
+        ];
+        
+        let dailySales = JSON.parse(localStorage.getItem('parkmaster_sales')) || [
+            { id: 1, date: "2023-10-01", concept: "Suscripción mensual", vehicle: "ABC123", type: "subscription", amount: 150.00, payment: "cash" },
+            { id: 2, date: "2023-10-01", concept: "Venta diaria", vehicle: "XYZ789", type: "daily", amount: 10.00, payment: "card" },
+            { id: 3, date: "2023-10-02", concept: "Suscripción mensual", vehicle: "DEF456", type: "subscription", amount: 150.00, payment: "transfer" }
+        ];
+        
+        let currentUser = null;
+        let editingClientId = null;
+        let editingSpaceId = null;
+        
+        // Inicializar la aplicación
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+            setupEventListeners();
+            loadInitialData();
+        });
+        
+        function initializeApp() {
+            // Guardar datos iniciales en localStorage si no existen
+            if (!localStorage.getItem('parkmaster_users')) {
+                localStorage.setItem('parkmaster_users', JSON.stringify(users));
+            }
+            if (!localStorage.getItem('parkmaster_clients')) {
+                localStorage.setItem('parkmaster_clients', JSON.stringify(clients));
+            }
+            if (!localStorage.getItem('parkmaster_spaces')) {
+                localStorage.setItem('parkmaster_spaces', JSON.stringify(parkingSpaces));
+            }
+            if (!localStorage.getItem('parkmaster_sales')) {
+                localStorage.setItem('parkmaster_sales', JSON.stringify(dailySales));
+            }
+            
+            // Cargar datos desde localStorage
+            users = JSON.parse(localStorage.getItem('parkmaster_users'));
+            clients = JSON.parse(localStorage.getItem('parkmaster_clients'));
+            parkingSpaces = JSON.parse(localStorage.getItem('parkmaster_spaces'));
+            dailySales = JSON.parse(localStorage.getItem('parkmaster_sales'));
+        }
+        
+        function setupEventListeners() {
+            // Login
+            document.getElementById('login-btn').addEventListener('click', handleLogin);
+            
+            // Logout
+            document.getElementById('logout-btn').addEventListener('click', handleLogout);
+            
+            // Navegación
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    switchModule(this.getAttribute('data-module'));
+                });
+            });
+            
+            // Gestión de Clientes
+            document.getElementById('add-client-btn').addEventListener('click', showAddClientModal);
+            document.getElementById('export-clients-btn').addEventListener('click', exportClientsToExcel);
+            document.getElementById('reset-data-btn').addEventListener('click', resetData);
+            document.getElementById('search-clients').addEventListener('input', filterClients);
+            document.getElementById('save-client-btn').addEventListener('click', saveClient);
+            document.getElementById('cancel-client-btn').addEventListener('click', hideClientModal);
+            
+            // Gestión de Espacios
+            document.getElementById('add-space-btn').addEventListener('click', showAddSpaceModal);
+            document.getElementById('bulk-maintenance-btn').addEventListener('click', toggleBulkMaintenance);
+            document.getElementById('save-space-btn').addEventListener('click', saveSpace);
+            document.getElementById('cancel-space-btn').addEventListener('click', hideSpaceModal);
+            
+            // Ventas Diarias
+            document.getElementById('add-sale-btn').addEventListener('click', showAddSaleModal);
+            document.getElementById('export-sales-btn').addEventListener('click', exportSalesToExcel);
+            document.getElementById('save-sale-btn').addEventListener('click', saveSale);
+            document.getElementById('cancel-sale-btn').addEventListener('click', hideSaleModal);
+            
+            // Contabilidad
+            document.getElementById('filter-income-btn').addEventListener('click', filterIncome);
+            
+            // Perfil
+            document.getElementById('update-profile-btn').addEventListener('click', updateProfile);
+            document.getElementById('change-password-btn').addEventListener('click', changePassword);
+            
+            // Búsqueda en Dashboard
+            document.getElementById('search-dashboard').addEventListener('input', filterDashboardClients);
+        }
+        
+        function loadInitialData() {
+            // Esta función se llamará después del login para cargar datos según el rol
+        }
+        
+        function handleLogin() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
+            if (!email || !password) {
+                showNotification('Por favor, complete todos los campos', 'error');
+                return;
+            }
+            
+            // Buscar usuario
+            const user = users.find(u => u.email === email && u.password === password);
+            
+            if (user) {
+                currentUser = user;
+                showNotification(`Bienvenido, ${user.name}`, 'success');
+                
+                // Ocultar login y mostrar aplicación
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('app').style.display = 'block';
+                
+                // Actualizar información de usuario
+                document.getElementById('user-name').textContent = user.name;
+                document.getElementById('user-role').textContent = user.role === 'admin' ? 'Administrador' : 'Cliente';
+                document.getElementById('user-role').className = `user-role ${user.role}`;
+                
+                // Configurar interfaz según el rol
+                setupUIForRole(user.role);
+                
+                // Cargar datos iniciales
+                loadDashboardData();
+            } else {
+                showNotification('Email o contraseña incorrectos', 'error');
+            }
+        }
+        
+        function handleLogout() {
+            currentUser = null;
+            document.getElementById('login-screen').style.display = 'block';
+            document.getElementById('app').style.display = 'none';
+            document.getElementById('login-email').value = '';
+            document.getElementById('login-password').value = '';
+        }
+        
+        function setupUIForRole(role) {
+            const adminNavs = [
+                document.getElementById('admin-nav'),
+                document.getElementById('admin-nav2'),
+                document.getElementById('admin-nav3'),
+                document.getElementById('admin-nav4')
+            ];
+            
+            if (role === 'admin') {
+                adminNavs.forEach(nav => nav.style.display = 'block');
+                document.getElementById('admin-dashboard').style.display = 'block';
+                document.getElementById('client-dashboard').style.display = 'none';
+            } else {
+                adminNavs.forEach(nav => nav.style.display = 'none');
+                document.getElementById('admin-dashboard').style.display = 'none';
+                document.getElementById('client-dashboard').style.display = 'block';
+                
+                // Cargar datos del cliente
+                loadClientDashboard();
+            }
+        }
+        
+        function switchModule(moduleName) {
+            // Ocultar todos los módulos
+            document.querySelectorAll('.module').forEach(module => {
+                module.classList.remove('active');
+            });
+            
+            // Remover clase active de todos los enlaces de navegación
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // Mostrar módulo seleccionado
+            document.getElementById(moduleName).classList.add('active');
+            
+            // Activar enlace de navegación correspondiente
+            document.querySelector(`.nav-link[data-module="${moduleName}"]`).classList.add('active');
+            
+            // Cargar datos del módulo si es necesario
+            if (moduleName === 'clients' && currentUser.role === 'admin') {
+                loadClients();
+            } else if (moduleName === 'spaces' && currentUser.role === 'admin') {
+                loadSpaces();
+            } else if (moduleName === 'sales' && currentUser.role === 'admin') {
+                loadSales();
+            } else if (moduleName === 'accounting' && currentUser.role === 'admin') {
+                loadAccounting();
+            } else if (moduleName === 'profile') {
+                loadProfile();
+            } else if (moduleName === 'dashboard') {
+                loadDashboardData();
+            }
+        }
+        
+        function loadDashboardData() {
+            if (currentUser.role === 'admin') {
+                // Estadísticas para administrador
+                document.getElementById('total-clients').textContent = clients.length;
+                
+                const activeSubscriptions = clients.filter(c => c.status === 'active').length;
+                const warningSubscriptions = clients.filter(c => c.status === 'warning').length;
+                const expiredSubscriptions = clients.filter(c => c.status === 'expired').length;
+                
+                document.getElementById('active-subscriptions').textContent = activeSubscriptions;
+                document.getElementById('warning-subscriptions').textContent = warningSubscriptions;
+                document.getElementById('expired-subscriptions').textContent = expiredSubscriptions;
+                
+                // Calcular ingresos mensuales
+                const currentMonth = new Date().getMonth();
+                const currentYear = new Date().getFullYear();
+                
+                const monthlyIncome = clients.reduce((total, client) => {
+                    const clientDate = new Date(client.startDate);
+                    if (clientDate.getMonth() === currentMonth && clientDate.getFullYear() === currentYear) {
+                        return total + client.amount;
+                    }
+                    return total;
+                }, 0);
+                
+                document.getElementById('monthly-income').textContent = `$${monthlyIncome.toFixed(2)}`;
+                
+                // Calcular ventas de hoy
+                const today = new Date().toISOString().split('T')[0];
+                const todaySales = dailySales
+                    .filter(sale => sale.date === today)
+                    .reduce((total, sale) => total + sale.amount, 0);
+                
+                document.getElementById('today-sales').textContent = `$${todaySales.toFixed(2)}`;
+                
+                // Cargar lista de clientes
+                loadClientsListDashboard();
+            }
+        }
+        
+        function loadClientsListDashboard() {
+            const container = document.getElementById('clients-list-dashboard');
+            container.innerHTML = '';
+            
+            if (clients.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-users"></i>
+                        <h3>No hay clientes registrados</h3>
+                        <p>Agrega tu primer cliente para comenzar</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            clients.forEach(client => {
+                const card = document.createElement('div');
+                card.className = `client-card ${client.status}`;
+                
+                card.innerHTML = `
+                    <div class="card-header">
+                        <div class="client-name">${client.name}</div>
+                        <div class="status ${client.status}">
+                            ${client.status === 'active' ? 'Activo' : 
+                              client.status === 'warning' ? 'Por Vencer' : 'Vencido'}
+                        </div>
+                    </div>
+                    <div class="card-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Vehículo:</span>
+                            <span>${client.vehicle}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Placa:</span>
+                            <span>${client.plate}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Espacio:</span>
+                            <span>${client.space}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Vencimiento:</span>
+                            <span>${formatDate(client.endDate)}</span>
+                        </div>
+                    </div>
+                    <div class="actions">
+                        <button class="btn btn-primary" onclick="editClient(${client.id})">
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
+                        <button class="btn btn-info" onclick="viewClient(${client.id})">
+                            <i class="fas fa-eye"></i> Ver Detalles
+                        </button>
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+        
+        function loadClientDashboard() {
+            // Buscar el cliente actual
+            const client = clients.find(c => c.email === currentUser.email);
+            
+            if (client) {
+                document.getElementById('client-dash-name').textContent = client.name;
+                document.getElementById('client-dash-status').textContent = 
+                    client.status === 'active' ? 'Activa' : 
+                    client.status === 'warning' ? 'Por Vencer' : 'Vencida';
+                document.getElementById('client-dash-status').className = `status ${client.status}`;
+                
+                document.getElementById('client-dash-vehicle').textContent = client.vehicle;
+                document.getElementById('client-dash-plate').textContent = client.plate;
+                document.getElementById('client-dash-space').textContent = client.space;
+                document.getElementById('client-dash-expiry').textContent = formatDate(client.endDate);
+                document.getElementById('client-dash-amount').textContent = `$${client.amount.toFixed(2)}`;
+                
+                // Calcular días restantes
+                const today = new Date();
+                const expiryDate = new Date(client.endDate);
+                const diffTime = expiryDate - today;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                document.getElementById('client-dash-days').textContent = diffDays > 0 ? diffDays : 0;
+                
+                // Cargar historial de pagos
+                loadPaymentHistory(client);
+            }
+        }
+        
+        function loadPaymentHistory(client) {
+            const container = document.getElementById('payment-history');
+            container.innerHTML = '';
+            
+            if (client.payments && client.payments.length > 0) {
+                const table = document.createElement('table');
+                table.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Monto</th>
+                            <th>Método</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${client.payments.map(payment => `
+                            <tr>
+                                <td>${formatDate(payment.date)}</td>
+                                <td>$${payment.amount.toFixed(2)}</td>
+                                <td>${payment.method === 'cash' ? 'Efectivo' : 
+                                      payment.method === 'card' ? 'Tarjeta' : 'Transferencia'}</td>
+                                <td><span class="status active">Pagado</span></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                `;
+                
+                container.appendChild(table);
+            } else {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-history"></i>
+                        <h3>No hay historial de pagos</h3>
+                        <p>No se han registrado pagos para esta cuenta</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Funciones para la gestión de clientes
+        function loadClients() {
+            const container = document.getElementById('clients-list');
+            container.innerHTML = '';
+            
+            if (clients.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-users"></i>
+                        <h3>No hay clientes registrados</h3>
+                        <p>Agrega tu primer cliente para comenzar</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            clients.forEach(client => {
+                const card = document.createElement('div');
+                card.className = `client-card ${client.status}`;
+                
+                card.innerHTML = `
+                    <div class="card-header">
+                        <div class="client-name">${client.name}</div>
+                        <div class="status ${client.status}">
+                            ${client.status === 'active' ? 'Activo' : 
+                              client.status === 'warning' ? 'Por Vencer' : 'Vencido'}
+                        </div>
+                    </div>
+                    <div class="card-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Email:</span>
+                            <span>${client.email}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Teléfono:</span>
+                            <span>${client.phone}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Vehículo:</span>
+                            <span>${client.vehicle}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Placa:</span>
+                            <span>${client.plate}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Espacio:</span>
+                            <span>${client.space}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Vencimiento:</span>
+                            <span>${formatDate(client.endDate)}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Monto Mensual:</span>
+                            <span>$${client.amount.toFixed(2)}</span>
+                        </div>
+                    </div>
+                    <div class="actions">
+                        <button class="btn btn-primary" onclick="editClient(${client.id})">
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteClient(${client.id})">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </button>
+                        <button class="btn btn-info" onclick="viewClient(${client.id})">
+                            <i class="fas fa-eye"></i> Ver Detalles
+                        </button>
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+        
+        function showAddClientModal() {
+            editingClientId = null;
+            document.getElementById('client-modal-title').textContent = 'Agregar Cliente';
+            document.getElementById('client-name').value = '';
+            document.getElementById('client-email').value = '';
+            document.getElementById('client-phone').value = '';
+            document.getElementById('client-vehicle').value = '';
+            document.getElementById('client-plate').value = '';
+            document.getElementById('client-space').innerHTML = '<option value="">Seleccionar espacio</option>';
+            document.getElementById('client-start-date').value = '';
+            document.getElementById('client-end-date').value = '';
+            document.getElementById('client-amount').value = '';
+            document.getElementById('client-status').value = 'active';
+            
+            // Cargar espacios disponibles
+            const availableSpaces = parkingSpaces.filter(space => space.status === 'available');
+            const spaceSelect = document.getElementById('client-space');
+            
+            availableSpaces.forEach(space => {
+                const option = document.createElement('option');
+                option.value = space.number;
+                option.textContent = `${space.number} (${space.type}) - $${space.rate}`;
+                spaceSelect.appendChild(option);
+            });
+            
+            document.getElementById('client-modal').style.display = 'flex';
+        }
+        
+        function editClient(id) {
+            const client = clients.find(c => c.id === id);
+            if (!client) return;
+            
+            editingClientId = id;
+            document.getElementById('client-modal-title').textContent = 'Editar Cliente';
+            document.getElementById('client-name').value = client.name;
+            document.getElementById('client-email').value = client.email;
+            document.getElementById('client-phone').value = client.phone;
+            document.getElementById('client-vehicle').value = client.vehicle;
+            document.getElementById('client-plate').value = client.plate;
+            document.getElementById('client-start-date').value = client.startDate;
+            document.getElementById('client-end-date').value = client.endDate;
+            document.getElementById('client-amount').value = client.amount;
+            document.getElementById('client-status').value = client.status;
+            
+            // Cargar espacios
+            const spaceSelect = document.getElementById('client-space');
+            spaceSelect.innerHTML = '<option value="">Seleccionar espacio</option>';
+            
+            parkingSpaces.forEach(space => {
+                const option = document.createElement('option');
+                option.value = space.number;
+                option.textContent = `${space.number} (${space.type}) - $${space.rate}`;
+                if (space.number === client.space) {
+                    option.selected = true;
+                }
+                spaceSelect.appendChild(option);
+            });
+            
+            document.getElementById('client-modal').style.display = 'flex';
+        }
+        
+        function saveClient() {
+            const name = document.getElementById('client-name').value;
+            const email = document.getElementById('client-email').value;
+            const phone = document.getElementById('client-phone').value;
+            const vehicle = document.getElementById('client-vehicle').value;
+            const plate = document.getElementById('client-plate').value;
+            const space = document.getElementById('client-space').value;
+            const startDate = document.getElementById('client-start-date').value;
+            const endDate = document.getElementById('client-end-date').value;
+            const amount = parseFloat(document.getElementById('client-amount').value);
+            const status = document.getElementById('client-status').value;
+            
+            if (!name || !email || !phone || !vehicle || !plate || !space || !startDate || !endDate || !amount) {
+                showNotification('Por favor, complete todos los campos', 'error');
+                return;
+            }
+            
+            if (editingClientId) {
+                // Editar cliente existente
+                const index = clients.findIndex(c => c.id === editingClientId);
+                if (index !== -1) {
+                    clients[index] = {
+                        ...clients[index],
+                        name,
+                        email,
+                        phone,
+                        vehicle,
+                        plate,
+                        space,
+                        startDate,
+                        endDate,
+                        amount,
+                        status
+                    };
+                }
+            } else {
+                // Agregar nuevo cliente
+                const newId = clients.length > 0 ? Math.max(...clients.map(c => c.id)) + 1 : 1;
+                clients.push({
+                    id: newId,
+                    name,
+                    email,
+                    phone,
+                    vehicle,
+                    plate,
+                    space,
+                    startDate,
+                    endDate,
+                    amount,
+                    status,
+                    payments: []
+                });
+                
+                // Actualizar estado del espacio
+                const spaceIndex = parkingSpaces.findIndex(s => s.number === space);
+                if (spaceIndex !== -1) {
+                    parkingSpaces[spaceIndex].status = 'occupied';
+                }
+            }
+            
+            // Guardar en localStorage
+            localStorage.setItem('parkmaster_clients', JSON.stringify(clients));
+            localStorage.setItem('parkmaster_spaces', JSON.stringify(parkingSpaces));
+            
+            // Recargar datos
+            loadClients();
+            loadDashboardData();
+            
+            // Ocultar modal
+            hideClientModal();
+            
+            showNotification(
+                editingClientId ? 'Cliente actualizado correctamente' : 'Cliente agregado correctamente', 
+                'success'
+            );
+        }
+        
+        function deleteClient(id) {
+            if (confirm('¿Está seguro de que desea eliminar este cliente?')) {
+                const client = clients.find(c => c.id === id);
+                
+                // Liberar el espacio asignado
+                if (client && client.space) {
+                    const spaceIndex = parkingSpaces.findIndex(s => s.number === client.space);
+                    if (spaceIndex !== -1) {
+                        parkingSpaces[spaceIndex].status = 'available';
+                    }
+                }
+                
+                // Eliminar cliente
+                clients = clients.filter(c => c.id !== id);
+                
+                // Guardar en localStorage
+                localStorage.setItem('parkmaster_clients', JSON.stringify(clients));
+                localStorage.setItem('parkmaster_spaces', JSON.stringify(parkingSpaces));
+                
+                // Recargar datos
+                loadClients();
+                loadDashboardData();
+                
+                showNotification('Cliente eliminado correctamente', 'success');
+            }
+        }
+        
+        function viewClient(id) {
+            const client = clients.find(c => c.id === id);
+            if (!client) return;
+            
+            alert(`Detalles del cliente:\n\nNombre: ${client.name}\nEmail: ${client.email}\nTeléfono: ${client.phone}\nVehículo: ${client.vehicle}\nPlaca: ${client.plate}\nEspacio: ${client.space}\nVencimiento: ${formatDate(client.endDate)}\nMonto: $${client.amount}`);
+        }
+        
+        function filterClients() {
+            const searchTerm = document.getElementById('search-clients').value.toLowerCase();
+            const cards = document.querySelectorAll('#clients-list .client-card');
+            
+            cards.forEach(card => {
+                const clientName = card.querySelector('.client-name').textContent.toLowerCase();
+                const clientDetails = card.textContent.toLowerCase();
+                
+                if (clientName.includes(searchTerm) || clientDetails.includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+        
+        function filterDashboardClients() {
+            const searchTerm = document.getElementById('search-dashboard').value.toLowerCase();
+            const cards = document.querySelectorAll('#clients-list-dashboard .client-card');
+            
+            cards.forEach(card => {
+                const clientName = card.querySelector('.client-name').textContent.toLowerCase();
+                const clientDetails = card.textContent.toLowerCase();
+                
+                if (clientName.includes(searchTerm) || clientDetails.includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+        
+        function hideClientModal() {
+            document.getElementById('client-modal').style.display = 'none';
+        }
+        
+        // Funciones para la gestión de espacios
+        function loadSpaces() {
+            // Actualizar estadísticas
+            document.getElementById('total-spaces').textContent = parkingSpaces.length;
+            document.getElementById('available-spaces').textContent = 
+                parkingSpaces.filter(s => s.status === 'available').length;
+            document.getElementById('occupied-spaces').textContent = 
+                parkingSpaces.filter(s => s.status === 'occupied').length;
+            document.getElementById('maintenance-spaces').textContent = 
+                parkingSpaces.filter(s => s.status === 'maintenance').length;
+            
+            // Cargar grid de espacios
+            const container = document.getElementById('spaces-grid');
+            container.innerHTML = '';
+            
+            parkingSpaces.forEach(space => {
+                const spaceItem = document.createElement('div');
+                spaceItem.className = `space-item ${space.status}`;
+                
+                spaceItem.innerHTML = `
+                    <div class="space-number">${space.number}</div>
+                    <div class="status ${space.status}">
+                        ${space.status === 'available' ? 'Disponible' : 
+                          space.status === 'occupied' ? 'Ocupado' : 'Mantenimiento'}
+                    </div>
+                    <div class="space-info">
+                        ${space.type === 'regular' ? 'Regular' :
+                          space.type === 'premium' ? 'Premium' :
+                          space.type === 'handicap' ? 'Discapacitados' : 'Motocicleta'}
+                    </div>
+                    <div class="space-info">$${space.rate}/mes</div>
+                    <div class="space-actions">
+                        <button class="btn btn-primary" onclick="editSpace(${space.id})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteSpace(${space.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                
+                container.appendChild(spaceItem);
+            });
+        }
+        
+        function showAddSpaceModal() {
+            editingSpaceId = null;
+            document.getElementById('space-modal-title').textContent = 'Agregar Espacio';
+            document.getElementById('space-number').value = '';
+            document.getElementById('space-type').value = 'regular';
+            document.getElementById('space-status').value = 'available';
+            document.getElementById('space-rate').value = '';
+            document.getElementById('space-modal').style.display = 'flex';
+        }
+        
+        function editSpace(id) {
+            const space = parkingSpaces.find(s => s.id === id);
+            if (!space) return;
+            
+            editingSpaceId = id;
+            document.getElementById('space-modal-title').textContent = 'Editar Espacio';
+            document.getElementById('space-number').value = space.number;
+            document.getElementById('space-type').value = space.type;
+            document.getElementById('space-status').value = space.status;
+            document.getElementById('space-rate').value = space.rate;
+            document.getElementById('space-modal').style.display = 'flex';
+        }
+        
+        function saveSpace() {
+            const number = document.getElementById('space-number').value;
+            const type = document.getElementById('space-type').value;
+            const status = document.getElementById('space-status').value;
+            const rate = parseFloat(document.getElementById('space-rate').value);
+            
+            if (!number || !rate) {
+                showNotification('Por favor, complete todos los campos', 'error');
+                return;
+            }
+            
+            if (editingSpaceId) {
+                // Editar espacio existente
+                const index = parkingSpaces.findIndex(s => s.id === editingSpaceId);
+                if (index !== -1) {
+                    parkingSpaces[index] = {
+                        ...parkingSpaces[index],
+                        number,
+                        type,
+                        status,
+                        rate
+                    };
+                }
+            } else {
+                // Agregar nuevo espacio
+                const newId = parkingSpaces.length > 0 ? Math.max(...parkingSpaces.map(s => s.id)) + 1 : 1;
+                parkingSpaces.push({
+                    id: newId,
+                    number,
+                    type,
+                    status,
+                    rate
+                });
+            }
+            
+            // Guardar en localStorage
+            localStorage.setItem('parkmaster_spaces', JSON.stringify(parkingSpaces));
+            
+            // Recargar datos
+            loadSpaces();
+            
+            // Ocultar modal
+            hideSpaceModal();
+            
+            showNotification(
+                editingSpaceId ? 'Espacio actualizado correctamente' : 'Espacio agregado correctamente', 
+                'success'
+            );
+        }
+        
+        function deleteSpace(id) {
+            if (confirm('¿Está seguro de que desea eliminar este espacio?')) {
+                // Verificar si el espacio está asignado a algún cliente
+                const space = parkingSpaces.find(s => s.id === id);
+                if (space) {
+                    const clientUsingSpace = clients.find(c => c.space === space.number);
+                    if (clientUsingSpace) {
+                        showNotification('No se puede eliminar el espacio porque está asignado a un cliente', 'error');
+                        return;
+                    }
+                }
+                
+                // Eliminar espacio
+                parkingSpaces = parkingSpaces.filter(s => s.id !== id);
+                
+                // Guardar en localStorage
+                localStorage.setItem('parkmaster_spaces', JSON.stringify(parkingSpaces));
+                
+                // Recargar datos
+                loadSpaces();
+                
+                showNotification('Espacio eliminado correctamente', 'success');
+            }
+        }
+        
+        function toggleBulkMaintenance() {
+            // Cambiar el estado de los espacios disponibles a mantenimiento y viceversa
+            parkingSpaces.forEach(space => {
+                if (space.status === 'available') {
+                    space.status = 'maintenance';
+                } else if (space.status === 'maintenance') {
+                    space.status = 'available';
+                }
+            });
+            
+            // Guardar en localStorage
+            localStorage.setItem('parkmaster_spaces', JSON.stringify(parkingSpaces));
+            
+            // Recargar datos
+            loadSpaces();
+            
+            showNotification('Estado de espacios actualizado', 'success');
+        }
+        
+        function hideSpaceModal() {
+            document.getElementById('space-modal').style.display = 'none';
+        }
+        
+        // Funciones para ventas diarias
+        function loadSales() {
+            // Actualizar estadísticas
+            const today = new Date().toISOString().split('T')[0];
+            const todaySalesAmount = dailySales
+                .filter(sale => sale.date === today)
+                .reduce((total, sale) => total + sale.amount, 0);
+            
+            document.getElementById('today-sales-amount').textContent = `$${todaySalesAmount.toFixed(2)}`;
+            
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+            const monthSalesAmount = dailySales
+                .filter(sale => {
+                    const saleDate = new Date(sale.date);
+                    return saleDate.getMonth() === currentMonth && saleDate.getFullYear() === currentYear;
+                })
+                .reduce((total, sale) => total + sale.amount, 0);
+            
+            document.getElementById('month-sales-amount').textContent = `$${monthSalesAmount.toFixed(2)}`;
+            
+            const totalSalesAmount = dailySales.reduce((total, sale) => total + sale.amount, 0);
+            document.getElementById('total-sales-amount').textContent = `$${totalSalesAmount.toFixed(2)}`;
+            
+            const averageDailySales = dailySales.length > 0 ? totalSalesAmount / dailySales.length : 0;
+            document.getElementById('average-daily-sales').textContent = `$${averageDailySales.toFixed(2)}`;
+            
+            // Cargar tabla de ventas
+            const tbody = document.getElementById('sales-table-body');
+            tbody.innerHTML = '';
+            
+            if (dailySales.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 30px;">
+                            <i class="fas fa-cash-register" style="font-size: 2rem; color: #ddd; margin-bottom: 10px;"></i>
+                            <p>No hay ventas registradas</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            dailySales.forEach(sale => {
+                const row = document.createElement('tr');
+                
+                row.innerHTML = `
+                    <td>${formatDate(sale.date)}</td>
+                    <td>${sale.concept}</td>
+                    <td>${sale.vehicle}</td>
+                    <td>
+                        ${sale.type === 'daily' ? 'Venta Diaria' : 
+                          sale.type === 'subscription' ? 'Suscripción' : 'Otro'}
+                    </td>
+                    <td>$${sale.amount.toFixed(2)}</td>
+                    <td>
+                        ${sale.payment === 'cash' ? 'Efectivo' : 
+                          sale.payment === 'card' ? 'Tarjeta' : 'Transferencia'}
+                    </td>
+                    <td>
+                        <button class="btn btn-danger" onclick="deleteSale(${sale.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+        
+        function showAddSaleModal() {
+            document.getElementById('sale-concept').value = '';
+            document.getElementById('sale-vehicle').value = '';
+            document.getElementById('sale-type').value = 'daily';
+            document.getElementById('sale-amount').value = '';
+            document.getElementById('sale-payment').value = 'cash';
+            document.getElementById('sale-modal').style.display = 'flex';
+        }
+        
+        function saveSale() {
+            const concept = document.getElementById('sale-concept').value;
+            const vehicle = document.getElementById('sale-vehicle').value;
+            const type = document.getElementById('sale-type').value;
+            const amount = parseFloat(document.getElementById('sale-amount').value);
+            const payment = document.getElementById('sale-payment').value;
+            const date = new Date().toISOString().split('T')[0];
+            
+            if (!concept || !vehicle || !amount) {
+                showNotification('Por favor, complete todos los campos', 'error');
+                return;
+            }
+            
+            // Agregar nueva venta
+            const newId = dailySales.length > 0 ? Math.max(...dailySales.map(s => s.id)) + 1 : 1;
+            dailySales.push({
+                id: newId,
+                date,
+                concept,
+                vehicle,
+                type,
+                amount,
+                payment
+            });
+            
+            // Guardar en localStorage
+            localStorage.setItem('parkmaster_sales', JSON.stringify(dailySales));
+            
+            // Recargar datos
+            loadSales();
+            loadDashboardData();
+            
+            // Ocultar modal
+            hideSaleModal();
+            
+            showNotification('Venta registrada correctamente', 'success');
+        }
+        
+        function deleteSale(id) {
+            if (confirm('¿Está seguro de que desea eliminar esta venta?')) {
+                dailySales = dailySales.filter(s => s.id !== id);
+                
+                // Guardar en localStorage
+                localStorage.setItem('parkmaster_sales', JSON.stringify(dailySales));
+                
+                // Recargar datos
+                loadSales();
+                loadDashboardData();
+                
+                showNotification('Venta eliminada correctamente', 'success');
+            }
+        }
+        
+        function hideSaleModal() {
+            document.getElementById('sale-modal').style.display = 'none';
+        }
+        
+        // Funciones para contabilidad
+        function loadAccounting() {
+            // Actualizar estadísticas
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+            
+            const currentMonthIncome = dailySales
+                .filter(sale => {
+                    const saleDate = new Date(sale.date);
+                    return saleDate.getMonth() === currentMonth && saleDate.getFullYear() === currentYear;
+                })
+                .reduce((total, sale) => total + sale.amount, 0);
+            
+            document.getElementById('current-month-income').textContent = `$${currentMonthIncome.toFixed(2)}`;
+            
+            const totalIncome = dailySales.reduce((total, sale) => total + sale.amount, 0);
+            document.getElementById('total-income').textContent = `$${totalIncome.toFixed(2)}`;
+            
+            const activeClients = clients.filter(c => c.status === 'active').length;
+            document.getElementById('accounting-active-clients').textContent = activeClients;
+            
+            const occupiedSpaces = parkingSpaces.filter(s => s.status === 'occupied').length;
+            document.getElementById('accounting-occupied-spaces').textContent = occupiedSpaces;
+            
+            // Cargar tabla de ingresos
+            loadIncomeTable();
+        }
+        
+        function loadIncomeTable() {
+            const tbody = document.getElementById('income-table-body');
+            tbody.innerHTML = '';
+            
+            if (dailySales.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 30px;">
+                            <i class="fas fa-chart-line" style="font-size: 2rem; color: #ddd; margin-bottom: 10px;"></i>
+                            <p>No hay ingresos registrados</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            dailySales.forEach(sale => {
+                const row = document.createElement('tr');
+                
+                row.innerHTML = `
+                    <td>${formatDate(sale.date)}</td>
+                    <td>${sale.concept}</td>
+                    <td>${sale.vehicle}</td>
+                    <td>
+                        ${sale.type === 'daily' ? 'Venta Diaria' : 
+                          sale.type === 'subscription' ? 'Suscripción' : 'Otro'}
+                    </td>
+                    <td>$${sale.amount.toFixed(2)}</td>
+                    <td><span class="status active">Pagado</span></td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+        
+        function filterIncome() {
+            const dateFrom = document.getElementById('date-from').value;
+            const dateTo = document.getElementById('date-to').value;
+            const incomeType = document.getElementById('income-type').value;
+            
+            let filteredSales = dailySales;
+            
+            if (dateFrom) {
+                filteredSales = filteredSales.filter(sale => sale.date >= dateFrom);
+            }
+            
+            if (dateTo) {
+                filteredSales = filteredSales.filter(sale => sale.date <= dateTo);
+            }
+            
+            if (incomeType !== 'all') {
+                filteredSales = filteredSales.filter(sale => sale.type === incomeType);
+            }
+            
+            // Actualizar tabla con datos filtrados
+            const tbody = document.getElementById('income-table-body');
+            tbody.innerHTML = '';
+            
+            if (filteredSales.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 30px;">
+                            No hay ingresos que coincidan con los filtros
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            filteredSales.forEach(sale => {
+                const row = document.createElement('tr');
+                
+                row.innerHTML = `
+                    <td>${formatDate(sale.date)}</td>
+                    <td>${sale.concept}</td>
+                    <td>${sale.vehicle}</td>
+                    <td>
+                        ${sale.type === 'daily' ? 'Venta Diaria' : 
+                          sale.type === 'subscription' ? 'Suscripción' : 'Otro'}
+                    </td>
+                    <td>$${sale.amount.toFixed(2)}</td>
+                    <td><span class="status active">Pagado</span></td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+        
+        // Funciones para perfil de usuario
+        function loadProfile() {
+            if (currentUser) {
+                document.getElementById('profile-name').value = currentUser.name;
+                document.getElementById('profile-email').value = currentUser.email;
+                document.getElementById('profile-phone').value = currentUser.phone || '';
+                document.getElementById('profile-address').value = currentUser.address || '';
+            }
+        }
+        
+        function updateProfile() {
+            const name = document.getElementById('profile-name').value;
+            const email = document.getElementById('profile-email').value;
+            const phone = document.getElementById('profile-phone').value;
+            const address = document.getElementById('profile-address').value;
+            
+            if (!name || !email) {
+                showNotification('Nombre y email son obligatorios', 'error');
+                return;
+            }
+            
+            // Actualizar usuario
+            const userIndex = users.findIndex(u => u.id === currentUser.id);
+            if (userIndex !== -1) {
+                users[userIndex] = {
+                    ...users[userIndex],
+                    name,
+                    email,
+                    phone,
+                    address
+                };
+                
+                // Actualizar usuario actual
+                currentUser = users[userIndex];
+                
+                // Actualizar información en la interfaz
+                document.getElementById('user-name').textContent = currentUser.name;
+                
+                // Guardar en localStorage
+                localStorage.setItem('parkmaster_users', JSON.stringify(users));
+                
+                showNotification('Perfil actualizado correctamente', 'success');
+            }
+        }
+        
+        function changePassword() {
+            const currentPassword = document.getElementById('current-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                showNotification('Por favor, complete todos los campos', 'error');
+                return;
+            }
+            
+            if (currentPassword !== currentUser.password) {
+                showNotification('La contraseña actual es incorrecta', 'error');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                showNotification('Las contraseñas nuevas no coinciden', 'error');
+                return;
+            }
+            
+            // Actualizar contraseña
+            const userIndex = users.findIndex(u => u.id === currentUser.id);
+            if (userIndex !== -1) {
+                users[userIndex].password = newPassword;
+                currentUser.password = newPassword;
+                
+                // Guardar en localStorage
+                localStorage.setItem('parkmaster_users', JSON.stringify(users));
+                
+                // Limpiar campos
+                document.getElementById('current-password').value = '';
+                document.getElementById('new-password').value = '';
+                document.getElementById('confirm-password').value = '';
+                
+                showNotification('Contraseña cambiada correctamente', 'success');
+            }
+        }
+        
+        // Funciones de utilidad
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type} show`;
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        function formatDate(dateString) {
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString('es-ES', options);
+        }
+        
+        function exportClientsToExcel() {
+            // Crear una copia de los clientes con formato adecuado
+            const clientsForExport = clients.map(client => ({
+                'Nombre': client.name,
+                'Email': client.email,
+                'Teléfono': client.phone,
+                'Vehículo': client.vehicle,
+                'Placa': client.plate,
+                'Espacio': client.space,
+                'Fecha Inicio': client.startDate,
+                'Fecha Vencimiento': client.endDate,
+                'Monto Mensual': client.amount,
+                'Estado': client.status === 'active' ? 'Activo' : 
+                         client.status === 'warning' ? 'Por Vencer' : 'Vencido'
+            }));
+            
+            // Crear libro de trabajo y hoja
+            const ws = XLSX.utils.json_to_sheet(clientsForExport);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Clientes');
+            
+            // Exportar a Excel
+            XLSX.writeFile(wb, 'clientes_parkmaster.xlsx');
+            
+            showNotification('Clientes exportados a Excel correctamente', 'success');
+        }
+        
+        function exportSalesToExcel() {
+            // Crear una copia de las ventas con formato adecuado
+            const salesForExport = dailySales.map(sale => ({
+                'Fecha': sale.date,
+                'Concepto': sale.concept,
+                'Vehículo/Placa': sale.vehicle,
+                'Tipo': sale.type === 'daily' ? 'Venta Diaria' : 
+                       sale.type === 'subscription' ? 'Suscripción' : 'Otro',
+                'Monto': sale.amount,
+                'Método de Pago': sale.payment === 'cash' ? 'Efectivo' : 
+                                 sale.payment === 'card' ? 'Tarjeta' : 'Transferencia'
+            }));
+            
+            // Crear libro de trabajo y hoja
+            const ws = XLSX.utils.json_to_sheet(salesForExport);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Ventas');
+            
+            // Exportar a Excel
+            XLSX.writeFile(wb, 'ventas_parkmaster.xlsx');
+            
+            showNotification('Ventas exportadas a Excel correctamente', 'success');
+        }
+        
+        function resetData() {
+            if (confirm('¿Está seguro de que desea resetear todos los datos? Esta acción no se puede deshacer.')) {
+                // Eliminar datos del localStorage
+                localStorage.removeItem('parkmaster_clients');
+                localStorage.removeItem('parkmaster_spaces');
+                localStorage.removeItem('parkmaster_sales');
+                
+                // Recargar la página
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>
